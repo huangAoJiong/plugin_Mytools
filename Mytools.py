@@ -15,9 +15,9 @@ from datetime import datetime, timedelta
 @plugins.register(
     name="Mytools",
     desire_priority=889,
-    hidden=True,
+    hidden=False,
     desc="自定义工具，想用什么功能自己添加进去",
-    version="0.1",
+    version="0.2",
     author="Haoj",
 )
 class Mytools(Plugin):
@@ -42,6 +42,14 @@ class Mytools(Plugin):
             reply = self.create_reply(ReplyType.TEXT, content)
             e_context["reply"] = reply
             e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
+        #查询时间戳
+            # weather_match = re.match(r'^(?:(.{2,7}?)(?:市|县|区|镇)?|(\d{7,9}))(?:的)?天气$', content)
+        time_match = re.search(r'现在|目前|此刻|当前.*时间|日期|时间戳', content)
+        if time_match:
+            content = self.get_timestamp()
+            reply = self.create_reply(ReplyType.TEXT, content)
+            e_context["reply"] = reply
+            e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
 
     def get_help_text(self, verbose=False, **kwargs):
         short_help_text = " 发送特定指令来获取相关信息！"
@@ -54,10 +62,11 @@ class Mytools(Plugin):
         # 娱乐和信息类
         help_text += "\n🎉 娱乐与资讯：\n"
         help_text += "  ⛓ enbase64:base64加密【enbase64 hello】\ndebase64:base64解密【debase64 aGVsbG8=】"
+        
 
         # 查询类
         help_text += "\n🔍 查询工具：\n"
-        help_text += "  🌦️ 📦 🌌暂无\n"
+        help_text += "  🎯 现在时间：返回当前机器时间\n"
 
 
         return help_text
@@ -81,7 +90,17 @@ class Mytools(Plugin):
             return decoded_string
         else:
             return '输入错误，请查看帮助再进行操作。\n'
-        
+    
+    #返回当前时间戳
+    def get_timestamp(self):
+        import time
+
+        result = ""
+        result += f"🕐︎当前时间：{datetime.now()}\n"
+        result += f"  时间戳-秒级(s)：{int(time.time()) }\n"
+        result += f"  时间戳-毫秒级(ms)：{time.time_ns() // 1000000 }\n"
+        result += "------------\n本次回答由Mytools插件回答😁😁😁\n"
+        return  result
 
     def make_request(self, url, method="GET", headers=None, params=None, data=None, json_data=None):
         try:
