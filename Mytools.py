@@ -61,12 +61,12 @@ class Mytools(Plugin):
 
         # 娱乐和信息类
         help_text += "\n🎉 娱乐与资讯：\n"
-        help_text += "  ⛓ enbase64:base64加密【enbase64 hello】\ndebase64:base64解密【debase64 aGVsbG8=】"
+        help_text += "    🕉enbase64:base64加密【enbase64 hello】\n     debase64:base64解密【debase64 aGVsbG8=】"
         
 
         # 查询类
         help_text += "\n🔍 查询工具：\n"
-        help_text += "  🎯 现在时间：返回当前机器时间\n"
+        help_text += "    🎯 现在时间：返回当前机器时间\n"
 
 
         return help_text
