@@ -99,7 +99,7 @@ class Mytools(Plugin):
         result += f"🕐︎当前时间：{datetime.now()}\n"
         result += f"  时间戳-秒级(s)：{int(time.time()) }\n"
         result += f"  时间戳-毫秒级(ms)：{time.time_ns() // 1000000 }\n"
-        result += "------------\n本次回答由Mytools插件回答😁😁😁\n"
+        result += "\n------------\n本次回答由Mytools插件提供😁😁😁\n"
         return  result
 
     def make_request(self, url, method="GET", headers=None, params=None, data=None, json_data=None):
