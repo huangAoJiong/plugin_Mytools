@@ -61,7 +61,7 @@ class Mytools(Plugin):
 
         # 娱乐和信息类
         help_text += "\n🎉 娱乐与资讯：\n"
-        help_text += "    🕉enbase64:base64加密【enbase64 hello】\n     debase64:base64解密【debase64 aGVsbG8=】"
+        help_text += "    🕉enbase64:base64加密【enbase64 hello】\n     🕉debase64:base64解密【debase64 aGVsbG8=】"
         
 
         # 查询类
@@ -77,19 +77,23 @@ class Mytools(Plugin):
     def get_base64_operator(self,message):
         import base64
         # 加密操作
-        if message[:len("enbase64")] == "enbase64":
-            original_string = message.split(" ", 1)[1]
-            encoded_bytes = base64.b64encode(original_string.encode('utf-8'))
-            encoded_string = encoded_bytes.decode('utf-8')
-            return encoded_string
-        # 解密操作
-        elif message[:len("debase64")] == "debase64":
-            encoded_string = message.split(" ", 1)[1]
-            decoded_bytes = base64.b64decode(encoded_string)
-            decoded_string = decoded_bytes.decode('utf-8')
-            return decoded_string
-        else:
-            return '输入错误，请查看帮助再进行操作。\n'
+        try:
+            if message[:len("enbase64")] == "enbase64":
+                original_string = message.split(" ", 1)[1]
+                encoded_bytes = base64.b64encode(original_string.encode('utf-8'))
+                encoded_string = encoded_bytes.decode('utf-8')
+                return encoded_string
+            # 解密操作
+            elif message[:len("debase64")] == "debase64":
+                encoded_string = message.split(" ", 1)[1]
+                decoded_bytes = base64.b64decode(encoded_string)
+                decoded_string = decoded_bytes.decode('utf-8')
+                return decoded_string
+            else:
+                return '输入错误，请查看帮助再进行操作。\n'
+        except Exception as e:
+            logger.error(f"发生了异常:{e}\n")
+            return f"发生了异常:{e}\n输入错误，请查看帮助再进行操作。\n"
     
     #返回当前时间戳
     def get_timestamp(self):
