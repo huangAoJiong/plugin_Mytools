@@ -6,10 +6,20 @@ from urllib.parse import urlparse
 from bridge.context import ContextType
 from bridge.reply import Reply, ReplyType
 from channel import channel
+from channel.chat_message import ChatMessage
 from common.log import logger
 from plugins import *
 from datetime import datetime, timedelta
 
+import urllib.parse
+import urllib.request
+import json
+
+import io
+from PIL import Image
+
+from . import enhance_img
+# import cv2
 
 
 @plugins.register(
@@ -17,7 +27,7 @@ from datetime import datetime, timedelta
     desire_priority=889,
     hidden=False,
     desc="自定义工具，想用什么功能自己添加进去",
-    version="0.2",
+    version="0.5.2",
     author="Haoj",
 )
 class Mytools(Plugin):
@@ -30,7 +40,8 @@ class Mytools(Plugin):
 
     def on_handle_context(self, e_context: EventContext):
         if e_context["context"].type not in [
-            ContextType.TEXT
+            ContextType.TEXT,
+            ContextType.IMAGE
         ]:
             return
         content = e_context["context"].content.strip()
@@ -50,6 +61,78 @@ class Mytools(Plugin):
             reply = self.create_reply(ReplyType.TEXT, content)
             e_context["reply"] = reply
             e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
+        
+        # 查询QQ头像
+        qq_format_match = re.search(r'qq\s+\d{8,10}', content)
+        if qq_format_match:
+            qq_image = self.get_QQ_photo(content)
+            reply_type = ReplyType.IMAGE_URL if self.is_valid_url(qq_image) else ReplyType.TEXT
+            reply = self.create_reply(reply_type, qq_image or "查询错误")
+            e_context["reply"] = reply
+            e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
+
+        if content == "二次元" or content == "动漫"  or content == "美女"  or content == "风景"  or content == "汽车"  or content == "MC酱":
+            Dm_image = self.get_gm_Img(content)
+            print(f"======{Dm_image}=======")
+            reply_type = ReplyType.IMAGE_URL if self.is_valid_url(Dm_image) else ReplyType.TEXT
+            reply = self.create_reply(reply_type, Dm_image or "查询错误")
+            e_context["reply"] = reply
+            e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
+
+
+        # 尝试接受图片
+
+        if e_context["context"].type == ContextType.IMAGE :
+            msg: ChatMessage = e_context["context"]["msg"]
+            m_flag = False
+            try:
+                msg.prepare()
+                with open(content, 'rb') as file:
+                    try:
+                        image_data = file.read()
+                        logger.info("图片读取成功")
+                        image = Image.open(io.BytesIO(image_data))
+                        if not os.path.exists('./tmp/'):
+                            os.mkdir('./tmp/')
+                        image.save('./tmp/new_image.bmp')
+                        m_flag = True
+                        # 检查文件是否存在
+                        if os.path.exists('./tmp/new_image.bmp'):
+                            try:
+                                # 尝试打开图像
+                                imageA = Image.open('./tmp/new_image.bmp')
+                                # 调用CLAHE函数处理图像
+                                output_image = enhance_img.clahe_color(imageA)  if str(imageA.getbands()) == r"('R', 'G', 'B')" else enhance_img.clahe(imageA) 
+                                
+                                # 保存处理后的图像
+                                output_image.save("./tmp/output_image_clahe.bmp")
+                                if os.path.exists('./tmp/output_image_clahe.bmp'):
+                                    try:
+                                        m_flag = False
+                                        reply = self.create_reply(ReplyType.FILE, './tmp/output_image_clahe.bmp')
+                                        e_context["reply"] = reply
+                                        e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
+                                    except Exception as e:
+                                        m_flag = True
+                                # 图像成功打开
+                            except Exception as e:
+                                # 图像打开失败
+                                print(f"无法打开图像：{e}")
+                                m_flag = True
+                    except Exception as e:
+                        logger.error(f"发送图片错误：{e}")
+                        m_flag = True
+            except Exception as e:
+                logger.error(f"读取图片数据时出现错误：{e}")
+                m_flag = True
+            if m_flag:
+                content = "测试接受图片"
+                reply = self.create_reply(ReplyType.TEXT, content)
+                e_context["reply"] = reply
+                e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
+
+
+
 
     def get_help_text(self, verbose=False, **kwargs):
         short_help_text = " 发送特定指令来获取相关信息！"
@@ -61,12 +144,19 @@ class Mytools(Plugin):
 
         # 娱乐和信息类
         help_text += "\n🎉 娱乐与资讯：\n"
-        help_text += "    🕉enbase64:base64加密【enbase64 hello】\n     🕉debase64:base64解密【debase64 aGVsbG8=】"
+        help_text += "    🕉enbase64:base64加密【enbase64 hello】\n    🕉debase64:base64解密【debase64 aGVsbG8=】\n"
+        help_text += "    🕉获取动漫壁纸：关键字【MC酱、风景、汽车、二次元、动漫、美女】\n"
         
-
         # 查询类
         help_text += "\n🔍 查询工具：\n"
         help_text += "    🎯 现在时间：返回当前机器时间\n"
+        help_text += "    🎯 QQ头像 : 【qq 12345678】获取QQ号为12345678的头像\n"
+
+        # 图像处理类
+        help_text += "\n从👓 图像处理：\n"
+        help_text += "    🎫图像增强：直接发送一张图像，会返回一个增强过的图像文件\n"
+        
+
 
 
         return help_text
@@ -74,6 +164,7 @@ class Mytools(Plugin):
 
     
      # base64加密解密操作
+    
     def get_base64_operator(self,message):
         import base64
         # 加密操作
@@ -106,6 +197,207 @@ class Mytools(Plugin):
         result += "\n------------\n本次回答由Mytools插件提供😁😁😁\n"
         return  result
 
+    #获取QQ头像
+    def get_QQ_photo(self,contents):
+        import urllib3
+        try:
+            # 创建一个连接池
+            # http = urllib3.PoolManager()
+            qq = contents.replace(" ","").replace("qq","")
+            return f"https://api.vvhan.com/api/qt?qq={qq}"
+        except Exception as e:
+            logger.error(f"查询QQ头像出错：{e}")
+            return self.handle_error(e, "except里QQ头像获取失败")
+    
+    # 随机获取二次元图片
+    def get_gm_Img(self, content):
+         # 二次元壁纸
+        def Dm_Image():
+            url = 'https://api.gumengya.com/Api/DmImg'
+            params = {
+                'format': 'json',
+            }
+            querys = urllib.parse.urlencode(params)
+            querys = querys.encode('utf-8')  # Encode the query string to bytes
+            request = urllib.request.Request(url, data=querys)
+            response = urllib.request.urlopen(request)
+            content = response.read().decode('utf-8')  # Decode the response to a string
+
+            if content:
+                try:
+                    res = json.loads(content)
+                    # 状态码 200 表示请求成功
+                    if res['code'] == '200' or res['code'] == 200:
+                        logger.info("请求成功%s" % res)
+                        return res['data']['url']
+                    else:
+                        logger.error("随机获取二次元请求失败%s" % res)
+                        return self.handle_error( f"{res}",f"请求失败")
+                except Exception as e:
+                    print("解析结果异常：%s" % e)
+                    return self.handle_error("解析结果异常--","随机获取美女接口异常")
+            else:
+                # 无法获取返回内容，请求异常
+                logger.error("随机获取二次元接口异常")
+                return self.handle_error("接口异常--","随机获取二次元接口异常")
+        
+        def Dm2_Image():
+            url = 'https://api.gumengya.com/Api/DmImgS'
+            params = {
+                'format': 'json',
+            }
+            querys = urllib.parse.urlencode(params)
+            querys = querys.encode('utf-8')  # Encode the query string to bytes
+            request = urllib.request.Request(url, data=querys)
+            response = urllib.request.urlopen(request)
+            content = response.read().decode('utf-8')  # Decode the response to a string
+
+            if content:
+                try:
+                    res = json.loads(content)
+                    # 状态码 200 表示请求成功
+                    if res['code'] == '200' or res['code'] == 200:
+                        logger.info("请求成功%s" % res)
+                        return res['data']['url']
+                    else:
+                        logger.error("随机获取二次元请求失败%s" % res)
+                        return self.handle_error( f"{res}",f"请求失败")
+                except Exception as e:
+                    print("解析结果异常：%s" % e)
+                    return self.handle_error("解析结果异常--","随机获取美女接口异常")
+            else:
+                # 无法获取返回内容，请求异常
+                logger.error("随机获取二次元接口异常")
+                return self.handle_error("接口异常--","随机获取二次元接口异常")
+        def Mv_Image():
+            url = 'https://api.gumengya.com/Api/MvImg'
+            params = {
+                'format': 'json',
+            }
+            querys = urllib.parse.urlencode(params)
+            querys = querys.encode('utf-8')  # Encode the query string to bytes
+            request = urllib.request.Request(url, data=querys)
+            response = urllib.request.urlopen(request)
+            content = response.read().decode('utf-8')  # Decode the response to a string
+
+            if content:
+                try:
+                    res = json.loads(content)
+                    # 状态码 200 表示请求成功
+                    if res['code'] == '200' or res['code'] == 200:
+                        logger.info("请求成功%s" % res)
+                        return res['data']['url']
+                    else:
+                        logger.error("随机获取美女请求失败%s" % res)
+                        return self.handle_error( f"{res}",f"美女接口请求失败")
+                except Exception as e:
+                    print("解析结果异常：%s" % e)
+                    return self.handle_error("解析结果异常--","随机获取美女接口异常")
+            else:
+                # 无法获取返回内容，请求异常
+                logger.error("随机获取美女接口异常")
+                return self.handle_error("接口异常--","随机获取美女接口异常")
+        def Fj_Image():
+            url = 'https://api.gumengya.com/Api/FjImg'
+            params = {
+                'format': 'json',
+            }
+            querys = urllib.parse.urlencode(params)
+            querys = querys.encode('utf-8')  # Encode the query string to bytes
+            request = urllib.request.Request(url, data=querys)
+            response = urllib.request.urlopen(request)
+            content = response.read().decode('utf-8')  # Decode the response to a string
+
+            if content:
+                try:
+                    res = json.loads(content)
+                    # 状态码 200 表示请求成功
+                    if res['code'] == '200' or res['code'] == 200:
+                        logger.info("请求成功%s" % res)
+                        return res['data']['url']
+                    else:
+                        logger.error("随机获取风景请求失败%s" % res)
+                        return self.handle_error( f"{res}",f"风景接口请求失败")
+                except Exception as e:
+                    print("解析结果异常：%s" % e)
+                    return self.handle_error("解析结果异常--","随机获取美女接口异常")
+            else:
+                # 无法获取返回内容，请求异常
+                logger.error("随机获取风景接口异常")
+                return self.handle_error("接口异常--","随机获取风景接口异常")
+        def Qc_Image():
+            url = 'https://api.gumengya.com/Api/QcImg'
+            params = {
+                'format': 'json',
+            }
+            querys = urllib.parse.urlencode(params)
+            querys = querys.encode('utf-8')  # Encode the query string to bytes
+            request = urllib.request.Request(url, data=querys)
+            response = urllib.request.urlopen(request)
+            content = response.read().decode('utf-8')  # Decode the response to a string
+
+            if content:
+                try:
+                    res = json.loads(content)
+                    # 状态码 200 表示请求成功
+                    if res['code'] == '200' or res['code'] == 200:
+                        logger.info("请求成功%s" % res)
+                        return res['data']['url']
+                    else:
+                        logger.error("随机获取汽车请求失败%s" % res)
+                        return self.handle_error( f"{res}",f"汽车请求失败")
+                except Exception as e:
+                    print("解析结果异常：%s" % e)
+                    return self.handle_error("解析结果异常--","随机获取美女接口异常")
+            else:
+                # 无法获取返回内容，请求异常
+                logger.error("随机获取汽车接口异常")
+                return self.handle_error("接口异常--","随机获取汽车接口异常")
+        def MC_Image():
+            url = 'https://api.gumengya.com/Api/McImg'
+            params = {
+                'format': 'json',
+            }
+            querys = urllib.parse.urlencode(params)
+            querys = querys.encode('utf-8')  # Encode the query string to bytes
+            request = urllib.request.Request(url, data=querys)
+            response = urllib.request.urlopen(request)
+            content = response.read().decode('utf-8')  # Decode the response to a string
+
+            if content:
+                try:
+                    res = json.loads(content)
+                    # 状态码 200 表示请求成功
+                    if res['code'] == '200' or res['code'] == 200:
+                        logger.info("请求成功%s" % res)
+                        return res['data']['url']
+                    else:
+                        logger.error("随机获取MC酱请求失败%s" % res)
+                        return self.handle_error( f"{res}",f"MC酱请求失败")
+                except Exception as e:
+                    print("解析结果异常：%s" % e)
+                    return self.handle_error("解析结果异常--","随机获取美女接口异常")
+            else:
+                # 无法获取返回内容，请求异常
+                logger.error("随机获取MC酱接口异常")
+                return self.handle_error("接口异常--","随机获取MC酱接口异常")
+        
+        key_word_Set = ["二次元", "动漫", "美女", "风景" , "汽车", "MC酱"]
+        if content == key_word_Set[0]:
+            return Dm_Image()
+        elif content == key_word_Set[1]:
+            return Dm2_Image()
+        elif content == key_word_Set[2]:
+            return Mv_Image()
+        elif content == key_word_Set[3]:
+            return Fj_Image()
+        elif content == key_word_Set[4]:
+            return Qc_Image()
+        elif content == key_word_Set[5]:
+            return MC_Image()
+
+
+
     def make_request(self, url, method="GET", headers=None, params=None, data=None, json_data=None):
         try:
             if method.upper() == "GET":
@@ -129,4 +421,18 @@ class Mytools(Plugin):
     def handle_error(self, error, message):
         logger.error(f"{message}，错误信息：{error}")
         return message
+    
+    def is_valid_url(self, url):
+        try:
+            result = urlparse(url)
+            return all([result.scheme, result.netloc])
+        except ValueError:
+            return False
+        
+
+
+#扩展
+        
+
+
 
