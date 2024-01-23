@@ -19,6 +19,7 @@ import io
 from PIL import Image
 
 from . import enhance_img
+from . import send_qq_msg
 # import cv2
 
 
@@ -27,7 +28,7 @@ from . import enhance_img
     desire_priority=889,
     hidden=False,
     desc="自定义工具，想用什么功能自己添加进去",
-    version="0.5.2",
+    version="0.5.1",
     author="Haoj",
 )
 class Mytools(Plugin):
@@ -79,9 +80,14 @@ class Mytools(Plugin):
             e_context["reply"] = reply
             e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
 
+        # 发送QQ消息
+        if content[:len('sendqq')] == 'sendqq' or content[:len('sendQQ')] == 'sendQQ':
+            content = self.get_QQ_msg(content)
+            reply = self.create_reply(ReplyType.TEXT, content)
+            e_context["reply"] = reply
+            e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
 
         # 尝试接受图片
-
         if e_context["context"].type == ContextType.IMAGE :
             msg: ChatMessage = e_context["context"]["msg"]
             m_flag = False
@@ -147,10 +153,12 @@ class Mytools(Plugin):
         help_text += "    🕉enbase64:base64加密【enbase64 hello】\n    🕉debase64:base64解密【debase64 aGVsbG8=】\n"
         help_text += "    🕉获取动漫壁纸：关键字【MC酱、风景、汽车、二次元、动漫、美女】\n"
         
+        
         # 查询类
         help_text += "\n🔍 查询工具：\n"
         help_text += "    🎯 现在时间：返回当前机器时间\n"
         help_text += "    🎯 QQ头像 : 【qq 12345678】获取QQ号为12345678的头像\n"
+        help_text += "    🎯 发送QQ消息 : sendqq -h\n"
 
         # 图像处理类
         help_text += "\n从👓 图像处理：\n"
@@ -396,7 +404,10 @@ class Mytools(Plugin):
         elif content == key_word_Set[5]:
             return MC_Image()
 
-
+    # 获取发送QQ消息的内容
+    def get_QQ_msg(self,messages):
+        message = messages.split(" ",1)[1]
+        return send_qq_msg.main(message)
 
     def make_request(self, url, method="GET", headers=None, params=None, data=None, json_data=None):
         try:
