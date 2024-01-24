@@ -64,6 +64,11 @@ import requests
 import re
 import json
 
+RED = ""
+GREED = ""
+YELLOW = ""
+RESET = ""
+
 def get_qq(input_str):
     ret = "-1"
     pattern = re.compile(r"-q\s*(\d+)+(\s\s*)")
@@ -78,32 +83,35 @@ def get_qq(input_str):
 
 def main(all_args):
     url = "http://cqhttp.aoj.lol:20008/send_private_msg"
-    error_msg = "用法：./qq-send-server [消息内容]\n发送给某个人的QQ个人消息。\n\n如果没有消息，只能查看帮助。\n"
+    error_msg = "用法：sendqq  [消息内容]\n发送给某个人的QQ个人消息。\n\n如果没有消息，只能查看帮助。\n"
     error_msg += "  -h, --help\t显示此帮助信息并退出\n  -v, --version\t版本信息\n"
     error_msg += "  -p\t指定接收消息的QQ号\n\n"
-    error_msg += "示例：\n  ./qq-send-server Hello world!\t发送QQ消息“Hello World!”\n"
-    error_msg += "  ./qq-send-server -h\t显示此帮助信息并退出\n"
-    error_msg += "  ./qq-send-server -q12345678 你好！\t指定QQ号【12345678】接收消息【你好！】\n"
-    error_msg += "  ./qq-send-server -q 12345678 你好！\t指定QQ号【12345678】接收消息【你好！】\n"
+    error_msg += "示例：\n  sendqq  Hello world!\t发送QQ消息“Hello World!”\n"
+    error_msg += "  sendqq  -h\t显示此帮助信息并退出\n"
+    error_msg += "  sendqq  -q12345678 你好！\t指定QQ号【12345678】接收消息【你好！】\n"
+    error_msg += "  sendqq  -q 12345678 你好！\t指定QQ号【12345678】接收消息【你好！】\n"
     
     if all_args:
         if all_args == "-h" or all_args == "--help":
-            return("\033[32m" + error_msg + "\033[0m")
+            return(GREED + error_msg + RESET)
             
-        elif all_args == "-v" or all_args == "--version":
-            return("\033[33m" + "0.2.1\n个人开发\n" + "\033[0m")
+        elif all_args == "-V" or all_args == "--version"or all_args == "-v":
+            return(YELLOW + "0.2.1\n个人开发\n" + RESET)
         else:
             # 自定义发送给的qq号
             qq = get_qq(all_args)
             if qq[0] != "-1":
                 url_msg = f"{url}?user_id={qq[0]}&message={qq[1]}"
-                res = requests.get(url_msg)
+                try:
+                    res = requests.get(url_msg)
+                except:
+                    return "服务器错误，请检查网络连接。"
                 try:
                     json_data = res.json()
                     status_value = json_data.get("status", "")
                     if status_value != "ok":
-                        print("\033[31m" + "Failed to send message\n可能原因："
-                              + "\n指定接收消息的QQ未添加服务QQ号【2622587578】，检查并添加好友后重试.\n" + "\033[0m")
+                        print(RED + "Failed to send message\n可能原因："
+                              + "\n指定接收消息的QQ未添加服务QQ号【2622587578】，检查并添加好友后重试.\n" + RESET)
                     else:
                         return '发送成功'
                 except Exception as e:
@@ -115,7 +123,11 @@ def main(all_args):
                 
 
     else:
-        return("\033[31m" + "./qq-send-server: 缺少参数\n请尝试执行 \"./qq-send-server --help\" 来获取更多信息。" + "\033[0m")
+        return(RED + "sendqq : 缺少参数\n请尝试执行 \"sendqq  --help\" 来获取更多信息。" + RESET)
 
 if __name__ == "__main__":
-    print(main("-q 2622587578 asd"))
+    RED = "\033[31m" 
+    GREED  = "\033[32m" 
+    YELLOW  = "\033[33m" 
+    RESET  = "\033[0m" 
+    print(main("-v"))
