@@ -1,5 +1,6 @@
 ## 一个基于[ChatGPT-on-Wechat](https://github.com/zhayujie/chatgpt-on-wechat)**项目的简单插件，目前功能简单，想增加新功能可自行DIY**
 [TOC]
+
 ### 安装
 #### 理想安装步骤
 
