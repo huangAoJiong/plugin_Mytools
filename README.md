@@ -1,6 +1,6 @@
 ## 一个基于[ChatGPT-on-Wechat](https://github.com/zhayujie/chatgpt-on-wechat)**项目的简单插件，目前功能简单，想增加新功能可自行DIY**
 
-### 安装
+### 理想安装步骤
 
 
 ```
@@ -8,6 +8,15 @@
 ```
 
 安装成功后，根据提示使用`#scanp`命令来扫描新插件，再使用`#enablep mytools`开启插件
+
+### 实际上
+
+在使用#installp安装后，扫描若不出现该插件的话，需要到后台安装。
+
+1. 进入plugin_Mytools文件夹
+2. pip3 install -r requirement.txt
+3. 再扫描插件，查看是否存在该插件
+4. 若还是不行就重启python app.py 该服务
 
 
 ### 配置
