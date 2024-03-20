@@ -1,6 +1,7 @@
-opencv-python 
-requests
-PIL
+
+opencv-python==4.9.0.80
+requests==2.31.0
+Pillow==9.0.0
 numpy
 json
 re
