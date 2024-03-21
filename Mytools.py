@@ -212,7 +212,7 @@ class Mytools(Plugin):
             # 创建一个连接池
             # http = urllib3.PoolManager()
             qq = contents.replace(" ","").replace("qq","")
-            return f"https://api.vvhan.com/api/qt?qq={qq}"
+            return f"https://q1.qlogo.cn/g?b=qq&nk={qq}&s=640"
         except Exception as e:
             logger.error(f"查询QQ头像出错：{e}")
             return self.handle_error(e, "except里QQ头像获取失败")
