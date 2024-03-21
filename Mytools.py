@@ -13,22 +13,20 @@ from datetime import datetime, timedelta
 
 import urllib.parse
 import urllib.request
-import json
 
 import io
-from PIL import Image
-
-from . import enhance_img
+# from PIL import Image
+#from . import enhance_img
 from . import send_qq_msg
 # import cv2
 
 
 @plugins.register(
     name="Mytools",
-    desire_priority=889,
+    desire_priority=940,
     hidden=False,
     desc="自定义工具，想用什么功能自己添加进去",
-    version="0.5.6",
+    version="0.6.1",
     author="Haoj",
 )
 class Mytools(Plugin):
@@ -41,21 +39,20 @@ class Mytools(Plugin):
 
     def on_handle_context(self, e_context: EventContext):
         if e_context["context"].type not in [
-            ContextType.TEXT,
-            ContextType.IMAGE
+            ContextType.TEXT
         ]:
             return
         content = e_context["context"].content.strip()
         logger.debug("[Mytools] on_handle_context. content: %s" % content)
 
-        #base64工具使用
-        if content[:len('enbase64')] == 'enbase64' or content[:len('debase64')] == 'debase64':
-            content = self.get_base64_operator(content)
-            reply = self.create_reply(ReplyType.TEXT, content)
-            e_context["reply"] = reply
-            e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
-        #查询时间戳
-            # weather_match = re.match(r'^(?:(.{2,7}?)(?:市|县|区|镇)?|(\d{7,9}))(?:的)?天气$', content)
+        # #base64工具使用
+        # if content[:len('enbase64')] == 'enbase64' or content[:len('debase64')] == 'debase64':
+        #     content = self.get_base64_operator(content)
+        #     reply = self.create_reply(ReplyType.TEXT, content)
+        #     e_context["reply"] = reply
+        #     e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
+        # #查询时间戳
+             # weather_match = re.match(r'^(?:(.{2,7}?)(?:市|县|区|镇)?|(\d{7,9}))(?:的)?天气$', content)
         time_match = re.search(r'现在|目前|此刻|当前.*时间|日期|时间戳', content)
         if time_match:
             content = self.get_timestamp()
@@ -87,55 +84,55 @@ class Mytools(Plugin):
             e_context["reply"] = reply
             e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
 
-        # 尝试接受图片
-        if e_context["context"].type == ContextType.IMAGE :
-            msg: ChatMessage = e_context["context"]["msg"]
-            m_flag = False
-            try:
-                msg.prepare()
-                with open(content, 'rb') as file:
-                    try:
-                        image_data = file.read()
-                        logger.info("图片读取成功")
-                        image = Image.open(io.BytesIO(image_data))
-                        if not os.path.exists('./tmp/'):
-                            os.mkdir('./tmp/')
-                        image.save('./tmp/new_image.bmp')
-                        m_flag = True
-                        # 检查文件是否存在
-                        if os.path.exists('./tmp/new_image.bmp'):
-                            try:
-                                # 尝试打开图像
-                                imageA = Image.open('./tmp/new_image.bmp')
-                                # 调用CLAHE函数处理图像
-                                output_image = enhance_img.clahe_color(imageA)  if str(imageA.getbands()) == r"('R', 'G', 'B')" else enhance_img.clahe(imageA) 
+        # # 尝试接受图片
+        # if e_context["context"].type == ContextType.IMAGE :
+        #     msg: ChatMessage = e_context["context"]["msg"]
+        #     m_flag = False
+        #     try:
+        #         msg.prepare()
+        #         with open(content, 'rb') as file:
+        #             try:
+        #                 image_data = file.read()
+        #                 logger.info("图片读取成功")
+        #                 image = Image.open(io.BytesIO(image_data))
+        #                 if not os.path.exists('./tmp/'):
+        #                     os.mkdir('./tmp/')
+        #                 image.save('./tmp/new_image.bmp')
+        #                 m_flag = True
+        #                 # 检查文件是否存在
+        #                 if os.path.exists('./tmp/new_image.bmp'):
+        #                     try:
+        #                         # 尝试打开图像
+        #                         imageA = Image.open('./tmp/new_image.bmp')
+        #                         # 调用CLAHE函数处理图像
+        #                         output_image = enhance_img.clahe_color(imageA)  if str(imageA.getbands()) == r"('R', 'G', 'B')" else enhance_img.clahe(imageA) 
                                 
-                                # 保存处理后的图像
-                                output_image.save("./tmp/output_image_clahe.bmp")
-                                if os.path.exists('./tmp/output_image_clahe.bmp'):
-                                    try:
-                                        m_flag = False
-                                        reply = self.create_reply(ReplyType.FILE, './tmp/output_image_clahe.bmp')
-                                        e_context["reply"] = reply
-                                        e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
-                                    except Exception as e:
-                                        m_flag = True
-                                # 图像成功打开
-                            except Exception as e:
-                                # 图像打开失败
-                                print(f"无法打开图像：{e}")
-                                m_flag = True
-                    except Exception as e:
-                        logger.error(f"发送图片错误：{e}")
-                        m_flag = True
-            except Exception as e:
-                logger.error(f"读取图片数据时出现错误：{e}")
-                m_flag = True
-            if m_flag:
-                content = "测试接受图片"
-                reply = self.create_reply(ReplyType.TEXT, content)
-                e_context["reply"] = reply
-                e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
+        #                         # 保存处理后的图像
+        #                         output_image.save("./tmp/output_image_clahe.bmp")
+        #                         if os.path.exists('./tmp/output_image_clahe.bmp'):
+        #                             try:
+        #                                 m_flag = False
+        #                                 reply = self.create_reply(ReplyType.FILE, './tmp/output_image_clahe.bmp')
+        #                                 e_context["reply"] = reply
+        #                                 e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
+        #                             except Exception as e:
+        #                                 m_flag = True
+        #                         # 图像成功打开
+        #                     except Exception as e:
+        #                         # 图像打开失败
+        #                         print(f"无法打开图像：{e}")
+        #                         m_flag = True
+        #             except Exception as e:
+        #                 logger.error(f"发送图片错误：{e}")
+        #                 m_flag = True
+        #     except Exception as e:
+        #         logger.error(f"读取图片数据时出现错误：{e}")
+        #         m_flag = True
+        #     if m_flag:
+        #         content = "测试接受图片"
+        #         reply = self.create_reply(ReplyType.TEXT, content)
+        #         e_context["reply"] = reply
+        #         e_context.action = EventAction.BREAK_PASS  # 事件结束，并跳过处理context的默认逻辑
 
 
 
@@ -150,7 +147,6 @@ class Mytools(Plugin):
 
         # 娱乐和信息类
         help_text += "\n🎉 娱乐与资讯：\n"
-        help_text += "    🕉enbase64:base64加密【enbase64 hello】\n    🕉debase64:base64解密【debase64 aGVsbG8=】\n"
         help_text += "    🕉获取动漫壁纸：关键字【MC酱、风景、汽车、二次元、动漫、美女】\n"
         
         
@@ -160,10 +156,6 @@ class Mytools(Plugin):
         help_text += "    🎯 QQ头像 : 【qq 12345678】获取QQ号为12345678的头像\n"
         help_text += "    🎯 发送QQ消息 : sendqq -h\n"
 
-        # 图像处理类
-        help_text += "\n从👓 图像处理：\n"
-        help_text += "    🎫图像增强：直接发送一张图像，会返回一个增强过的图像文件\n"
-        
 
 
 
@@ -212,7 +204,7 @@ class Mytools(Plugin):
             # 创建一个连接池
             # http = urllib3.PoolManager()
             qq = contents.replace(" ","").replace("qq","")
-            return f"https://api.vvhan.com/api/qt?qq={qq}"
+            return f"https://q1.qlogo.cn/g?b=qq&nk={qq}&s=640"
         except Exception as e:
             logger.error(f"查询QQ头像出错：{e}")
             return self.handle_error(e, "except里QQ头像获取失败")
