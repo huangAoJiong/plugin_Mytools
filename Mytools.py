@@ -26,7 +26,7 @@ from . import send_qq_msg
     desire_priority=940,
     hidden=False,
     desc="自定义工具，想用什么功能自己添加进去",
-    version="0.6.1",
+    version="0.6.2",
     author="Haoj",
 )
 class Mytools(Plugin):

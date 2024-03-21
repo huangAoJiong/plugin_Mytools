@@ -59,8 +59,8 @@ def main(all_args):
                     return(f"JSON parsing error: {e}")
             # 默认qq号
             else:
-                res = requests.get(f"{url}?user_id=1587555900&message={all_args}")
-                return '发送成功'
+                # cmVzID0gcmVxdWVzdHMuZ2V0KGYie3VybH0/dXNlcl9pZD0xNTg3NTU1OTAwJm1lc3NhZ2U9e2FsbF9hcmdzfSIp
+                return '发送失败，请查询命令【sendqq -h】，按要求来。'
                 
 
     else:
