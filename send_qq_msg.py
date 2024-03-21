@@ -52,6 +52,7 @@ def main(all_args):
                     if status_value != "ok":
                         print(RED + "Failed to send message\n可能原因："
                               + "\n指定接收消息的QQ未添加服务QQ号【2622587578】，检查并添加好友后重试.\n" + RESET)
+                        return 'Failed to send message. 可能原因：指定接收消息的QQ未添加服务QQ号【2622587578】'
                     else:
                         return '发送成功'
                 except Exception as e:
