@@ -26,7 +26,7 @@ from . import send_qq_msg
     desire_priority=940,
     hidden=False,
     desc="自定义工具，想用什么功能自己添加进去",
-    version="0.6.2",
+    version="0.6.1",
     author="Haoj",
 )
 class Mytools(Plugin):
@@ -39,7 +39,8 @@ class Mytools(Plugin):
 
     def on_handle_context(self, e_context: EventContext):
         if e_context["context"].type not in [
-            ContextType.TEXT
+            ContextType.TEXT,
+            ContextType.IMAGE
         ]:
             return
         content = e_context["context"].content.strip()
